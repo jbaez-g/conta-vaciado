@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="glass w-full max-w-5xl mx-auto rounded-2xl p-6 md:p-10 shadow-2xl relative">
+        
+        <div class="text-center mb-8 relative z-10">
+            <h1 class="text-3xl font-bold text-white mb-2">
+                Herramienta de Vaciado F29
+            </h1>
+            <p class="text-gray-400 text-sm">
+                Procesamiento masivo de carpetas tributarias
+            </p>
+        </div>
+
+        <div class="max-w-xl mx-auto mb-10 relative z-10">
+            <form method="post" enctype="multipart/form-data" class="flex flex-col gap-4">
+                {% csrf_token %}
+                
+                <div class="flex items-center justify-center w-full">
+                    <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-500 rounded-lg cursor-pointer hover:bg-white/5 hover:border-purple-400 transition-all duration-300">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg class="w-8 h-8 mb-3 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p class="text-sm text-gray-400"><span class="font-semibold">Haz clic para subir</span> o arrastra el PDF aquí</p>
+                            <p class="text-xs text-gray-500">Formato PDF (Carpeta Tributaria)</p>
+                        </div>
+                        <input id="dropzone-file" type="file" name="archivo_pdf" accept=".pdf" class="hidden" required onchange="mostrarNombreArchivo()" />
+                    </label>
+                </div>
+                
+                <p id="nombre-archivo" class="text-center text-sm text-blue-300 h-5 font-mono"></p>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform transition hover:scale-[1.02] active:scale-95">
+                    Procesar Documento
+                </button>
+            </form>
+        </div>
+
+        {% if error %}
+            <div class="bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded relative mb-6 text-center z-10 animate-fade-in-up">
+                <strong class="font-bold">Error:</strong>
+                <span class="block sm:inline">{{ error }}</span>
+            </div>
+        {% endif %}
+
+        {% if resultados %}
+            <div class="relative z-10 animate-fade-in-up pb-4">
+                
+                <div class="client-card p-4 rounded-lg mb-6 flex items-center justify-between shadow-lg bg-blue-900/20 border-l-4 border-blue-500">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-blue-500/20 p-3 rounded-full">
+                            <svg class="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-blue-300 uppercase tracking-wider font-semibold">Cliente Detectado</p>
+                            <h3 class="text-xl font-bold text-white">{{ resultados.0.nombre_emisor }}</h3>
+                            <p class="text-sm text-gray-300 font-mono">RUT: {{ resultados.0.rut_emisor }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-end mb-4">
+                    <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Detalle por Periodo
+                    </h2>
+                    
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-gray-400 bg-white/10 px-3 py-1.5 rounded-full border border-white/5">
+                            {{ resultados|length }} periodos
+                        </span>
+
+                        <div class="relative inline-block text-left">
+                            <button id="menu-button" type="button" class="inline-flex justify-center items-center w-9 h-9 rounded-full bg-white/5 hover:bg-white/20 text-gray-300 hover:text-white border border-white/10 focus:outline-none transition-all duration-200">
+                                <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                </svg>
+                            </button>
+
+                            <div id="dropdown-menu" class="hidden absolute right-0 mt-2 w-56 origin-top-right rounded-xl glass-menu z-50 transform transition-all duration-200 bg-gray-800 border border-gray-700">
+                                <div class="py-1">
+                                    <a href="{% url 'descargar_excel' %}" class="group flex items-center px-4 py-3 text-sm text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
+                                        <svg class="mr-3 h-5 w-5 text-green-500 group-hover:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        Exportar a Excel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-white/10 shadow-xl bg-black/20">
+                    <table class="w-full text-sm text-left text-gray-300">
+                        <thead class="text-xs text-gray-100 uppercase bg-white/10">
+                            <tr>
+                                <th scope="col" class="px-4 py-3">Periodo</th>
+                                <th scope="col" class="px-4 py-3 text-right text-blue-300">Ingresos</th>
+                                <th scope="col" class="px-4 py-3 text-right text-orange-300">Compras Netas</th>
+                                <th scope="col" class="px-4 py-3 text-right">C. Exentas</th>
+                                <th scope="col" class="px-4 py-3 text-right">Honorarios</th>
+                                <th scope="col" class="px-4 py-3 text-right text-yellow-300">PPM</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fila in resultados %}
+                            <tr class="glass-row border-b border-white/5 transition duration-150">
+                                <td class="px-4 py-3 font-medium text-white whitespace-nowrap">
+                                    {{ fila.mes }} {{ fila.anio }}
+                                </td>
+                                <td class="px-4 py-3 text-right font-mono">${{ fila.ingresos }}</td>
+                                <td class="px-4 py-3 text-right font-mono">${{ fila.compras_netas }}</td>
+                                <td class="px-4 py-3 text-right font-mono">${{ fila.compras_exentas }}</td>
+                                <td class="px-4 py-3 text-right font-mono">${{ fila.boletas_honorarios }}</td>
+                                <td class="px-4 py-3 text-right font-mono text-yellow-200">${{ fila.ppm }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function mostrarNombreArchivo() {
+            const input = document.getElementById('dropzone-file');
+            const output = document.getElementById('nombre-archivo');
+            if (input.files.length > 0) {
+                output.textContent = "Archivo seleccionado: " + input.files[0].name;
+                output.classList.add('animate-pulse');
+            } else {
+                output.textContent = "";
+                output.classList.remove('animate-pulse');
+            }
+        }
+
+        const menuBtn = document.getElementById('menu-button');
+        const dropdown = document.getElementById('dropdown-menu');
+
+        if (menuBtn && dropdown) {
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+            });
+
+            window.addEventListener('click', (e) => {
+                if (!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+            
+            dropdown.addEventListener('click', () => {
+                dropdown.classList.add('hidden');
+            });
+        }
+    </script>
+{% endblock %}
