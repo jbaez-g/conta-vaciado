@@ -1,7 +1,12 @@
+from pathlib import Path
 import os
-import dj_database_url # <--- Importar esto
+import dj_database_url  # <--- Necesario para la base de datos en la nube
+from decouple import config  # <--- ¡ESTA ES LA QUE TE FALTA!
 
 # ... (resto de imports)
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 # MIDDLEWARE: Agrega WhiteNoise justo después de SecurityMiddleware
 MIDDLEWARE = [
